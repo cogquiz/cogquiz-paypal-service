@@ -1,37 +1,27 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
+  paypal-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3006:3006"
     environment:
+      - SERVICE_PORT=3006
+      - SERVICE_NAME=cogquiz-paypal-service
       - NODE_ENV=development
-      - PORT=3000
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cogquiz
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - .:/app
-      - /app/node_modules
-    command: npm run dev
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET:-secret}
+      - PAYPAL_MODE=${PAYPAL_MODE:-sandbox}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-secret-key}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+    restart: unless-stopped
+    networks:
+      - cogquiz-network
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=cogquiz
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:
+networks:
+  cogquiz-network:
+    driver: bridge
